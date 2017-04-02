@@ -1,4 +1,6 @@
 
+import sys
+
 from PIL import Image
 from Queue import *
 
@@ -70,3 +72,23 @@ def getColorBlock():
 
 
 def stepNeedle():
+    pass
+
+
+
+
+
+# interpret
+
+halted = False
+
+if len(sys.argv) < 2:
+    print "You need to supply a path to an image file"
+    exit()
+path = sys.argv[1]
+codelSize = 1
+if len(sys.argv) >= 3:
+    codelSize = int(sys.argv[2])
+
+while not halted:
+    executeCommand(getNextCommand())
