@@ -212,17 +212,21 @@ def moveToNextColorBlockFromWhite():
 # interpret
 
 def interpretNewColorBlock(color, size):
-    global lastColor
+    global lastColor, lastSize
 
     if color != lastColor and color != WHITE and lastColor != WHITE:
         commandID = (colorRotationMatrix.index(color) - colorRotationMatrix.index(lastColor)) % 18
-        executeCommand(commandID, size)
+        executeCommand(commandID, lastSize)
 
     lastColor = color
     lastSize = size
 
+    # print stack.getData()
+
 def executeCommand(id, val):
     global CC, DP
+
+    # print "command: " + str(id)
 
     if id == 1: # push
         stack.push(val)
@@ -337,7 +341,6 @@ codels = img.load()
 # initial "reset"
 colorBlock = getColorBlock()
 exitAttempts = 0
-totalFailedAttempts = 0
 
 while exitAttempts < 8:
     exitAttempts += 1
@@ -353,9 +356,8 @@ while exitAttempts < 8:
 
     if peakCodel() == BLACK:
         # hit restriction (either black codel or edge of image)
-        totalFailedAttempts += 1
 
-        if totalFailedAttempts % 2 == 0:
+        if exitAttempts % 2 == 1:
             DP = newDir(DP, RIGHT) # rotate DP clockwise
         else:
             CC = newDir(CC, DOWN) # toggle CC l/r
@@ -371,7 +373,7 @@ while exitAttempts < 8:
         colorBlock = getColorBlock()
         exitAttempts = 0
 
-        # print (needle)
+        # print (CC, needle)
 
         if getColor() is WHITE:
 
