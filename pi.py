@@ -4,6 +4,10 @@ import sys
 from PIL import Image
 
 ################################################################################
+
+logCmds = False
+
+################################################################################
 # constants
 
 # colors
@@ -236,19 +240,25 @@ def executeCommand(id, val):
     global CC, DP
 
     if id == 1: # push
+        if logCmds: print("PUSH", val)
         stack.push(val)
     if id == 2: # pop
+        if logCmds: print("POP")
         stack.pop()
     if id == 3: # add
+        if logCmds: print("ADD")
         if stack.size() >= 2:
             stack.push(stack.pop() + stack.pop())
     if id == 4: # subtract
+        if logCmds: print("SUBTRACT")
         if stack.size() >= 2:
             stack.push(- stack.pop() + stack.pop())
     if id == 5: # multiply
+        if logCmds: print("MUL")
         if stack.size() >= 2:
             stack.push(stack.pop() * stack.pop())
     if id == 6: # divide
+        if logCmds: print("DIV")
         if stack.size() >= 2:
             top = stack.pop()
             second = stack.pop()
@@ -258,6 +268,7 @@ def executeCommand(id, val):
                 stack.push(second)
                 stack.push(top)
     if id == 7: # mod
+        if logCmds: print("MOD")
         if stack.size() >= 2:
             top = stack.pop()
             second = stack.pop()
@@ -267,28 +278,34 @@ def executeCommand(id, val):
                 stack.push(second)
                 stack.push(top)
     if id == 8: # not
+        if logCmds: print("NOT")
         if stack.size() >= 1:
             if stack.pop() == 0:
                 stack.push(1)
             else:
                 stack.push(0)
     if id == 9: # greater
+        if logCmds: print("GT")
         if stack.size() >= 2:
             if stack.pop() < stack.pop():
                 stack.push(1)
             else:
                 stack.push(0)
     if id == 10: # pointer
+        if logCmds: print("POINTER")
         if stack.size() >= 1:
             DP = (DP + stack.pop()) % 4
     if id == 11: # switch
+        if logCmds: print("SWITCH")
         if stack.size() >= 1:
             if stack.pop() % 2 == 1:
                 CC = newDir(CC, DOWN) # toggle CC
     if id == 12: # duplicate
+        if logCmds: print("DUPE")
         if stack.size() >= 1:
             stack.push(stack.push(stack.pop()))
     if id == 13: # roll
+        if logCmds: print("ROLL")
         if stack.size() >= 2:
             rolls = stack.pop()
             depth = stack.pop()
@@ -308,6 +325,7 @@ def executeCommand(id, val):
                 stack.push(depth)
                 stack.push(rolls)
     if id == 14: # in(number)
+        if logCmds: print("IN(num)")
         while True:
             inputStr = str(raw_input("#:"))
             try:
@@ -316,16 +334,20 @@ def executeCommand(id, val):
             except:
                 continue
     if id == 15: # in(char)
+        if logCmds: print("IN(char)")
         while True:
             inputStr = str(raw_input("\":"))
             if len(inputStr) > 0:
-                stack.push(ord(inputStr[0]))
+                stack.push(inputStr[0])
                 break
     if id == 16: # out(number)
+        if logCmds: print("OUT(num)")
         print(stack.pop(), end="")
     if id == 17: # out(char)
+        if logCmds: print("OUT(char)")
         print(chr(stack.pop()), end="")
 
+    # print(stack.getData())
 
 
 ################################################################################
@@ -387,6 +409,7 @@ while exitAttempts < 8:
 
         stepNeedle(DP) # move into new color block
 
+
         if getColor() == WHITE:
             # if needle is on a white codel
 
@@ -396,6 +419,8 @@ while exitAttempts < 8:
             # try to leave the white
             if not moveToNextColorBlockFromWhite():
                 break # couldn't exit white color block, stop reading the image
+
+        # print(needle, DP)
 
         # next color block
         colorBlock = getColorBlock()
