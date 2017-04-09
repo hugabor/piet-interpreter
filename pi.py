@@ -195,7 +195,7 @@ def findFarthestInDir(setOfCoords, dir):
 # attempts to "slide" through the current white color block
 # returns false if no exit is found
 def moveToNextColorBlockFromWhite():
-    global needle, CC, DP
+    global CC, DP
 
     visited = set()
 
@@ -317,9 +317,9 @@ def executeCommand(id, val):
                     poppedToBury.append(stack.pop())
                 for _ in range(depth - (rolls % depth)):
                     poppedToBringUp.append(stack.pop())
-                for elem in poppedToBury:
+                for elem in poppedToBury[::-1]:
                     stack.push(elem)
-                for elem in poppedToBringUp:
+                for elem in poppedToBringUp[::-1]:
                     stack.push(elem)
             else:
                 stack.push(depth)
@@ -338,7 +338,7 @@ def executeCommand(id, val):
         while True:
             inputStr = str(raw_input("\":"))
             if len(inputStr) > 0:
-                stack.push(inputStr[0])
+                stack.push(ord(inputStr[0]) - 48)
                 break
     if id == 16: # out(number)
         if logCmds: print("OUT(num)")
