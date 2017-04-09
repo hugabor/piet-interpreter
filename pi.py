@@ -1,8 +1,7 @@
 
+from __future__ import print_function
 import sys
-
 from PIL import Image
-from Queue import *
 
 ################################################################################
 # constants
@@ -103,23 +102,26 @@ def getColor():
 # returns set of ordered pairs for the color block the needle is in currently
 def getColorBlock():
 
-    colorBlock = set()
-    potentials = Queue()
+    checked = [needle]
+    colorBlock = set([])
+    potentials = []
 
     def addCodeltoBlock(pos):
         colorBlock.add(pos)
         x, y = pos
         newPotentials = [(x, y-1), (x+1, y), (x, y+1), (x-1, y)]
         for (px, py) in newPotentials:
-            if 0 <= px < width and 0 <= py < height and (px, py) not in colorBlock:
-                potentials.put((px, py))
+            if (0 <= px < width) and (0 <= py < height) and ((px, py) not in checked):
+                potentials.append((px, py))
+            checked.append((px, py))
 
     addCodeltoBlock(needle)
 
-    while not potentials.empty():
-        potential = potentials.get()
+    while len(potentials) > 0:
+        potential = potentials.pop(0)
         if codels[potential[0], potential[1]] == codels[needle[0], needle[1]]:
             addCodeltoBlock(potential)
+        # checked.append(potential)
 
     return colorBlock
 
@@ -134,6 +136,7 @@ def stepNeedle(dir):
 # returns color of codel one over from the needle in the direction of DP
 # if it attempts to peak past the edge of the image, BLACK is returned
 def peakCodel():
+    global needle
 
     stepNeedle(DP) # temporarily
     peakNeedle = needle
@@ -188,12 +191,12 @@ def findFarthestInDir(setOfCoords, dir):
 # attempts to "slide" through the current white color block
 # returns false if no exit is found
 def moveToNextColorBlockFromWhite():
-    global CC, DP
+    global needle, CC, DP
 
     visited = set()
 
-    while needle not in visited:
-        visited.add(needle)
+    while (needle, DP) not in visited:
+        visited.add((needle, DP))
 
         while peakCodel() == BLACK:
             CC = newDir(CC, DOWN) # toggles CC l/r
@@ -215,18 +218,22 @@ def interpretNewColorBlock(color, size):
     global lastColor, lastSize
 
     if color != lastColor and color != WHITE and lastColor != WHITE:
-        commandID = (colorRotationMatrix.index(color) - colorRotationMatrix.index(lastColor)) % 18
+
+        lastIndex = colorRotationMatrix.index(lastColor)
+        newIndex  = colorRotationMatrix.index(color)
+
+        hueDiff   = ((newIndex / 3) - (lastIndex / 3)) % 6
+        shadeDiff = ((newIndex % 3) - (lastIndex % 3)) % 3
+
+        commandID = hueDiff * 3 + shadeDiff
+
         executeCommand(commandID, lastSize)
 
     lastColor = color
     lastSize = size
 
-    # print stack.getData()
-
 def executeCommand(id, val):
     global CC, DP
-
-    # print "command: " + str(id)
 
     if id == 1: # push
         stack.push(val)
@@ -285,13 +292,13 @@ def executeCommand(id, val):
         if stack.size() >= 2:
             rolls = stack.pop()
             depth = stack.pop()
-            rolls = rolls % depth
+            rolls = rolls % depth if depth > 0 else 0
             poppedToBury = []
             poppedToBringUp = []
-            if depth >= 2 and stack.size() >= depth:
-                for _ in range(rolls):
+            if depth >= 0 and stack.size() >= depth:
+                for _ in range(rolls % depth):
                     poppedToBury.append(stack.pop())
-                for _ in range(depth - rolls):
+                for _ in range(depth - (rolls % depth)):
                     poppedToBringUp.append(stack.pop())
                 for elem in poppedToBury:
                     stack.push(elem)
@@ -301,16 +308,25 @@ def executeCommand(id, val):
                 stack.push(depth)
                 stack.push(rolls)
     if id == 14: # in(number)
-        stack.push(100)
+        while True:
+            inputStr = str(raw_input("#:"))
+            try:
+                stack.push(int(inputStr))
+                break
+            except:
+                continue
     if id == 15: # in(char)
-        stack.push(66)
+        while True:
+            inputStr = str(raw_input("\":"))
+            if len(inputStr) > 0:
+                stack.push(ord(inputStr[0]))
+                break
     if id == 16: # out(number)
-        print(stack.pop())
+        print(stack.pop(), end="")
     if id == 17: # out(char)
-        print(chr(stack.pop()))
+        print(chr(stack.pop()), end="")
 
-    #print ("command:", id, val)
-    #print (stack.getData())
+
 
 ################################################################################
 ################################################################################
@@ -321,7 +337,7 @@ def executeCommand(id, val):
 
 # load file and set up environment
 if len(sys.argv) < 2:
-    print "You need to supply a path to an image file"
+    print("You need to supply a path to an image file")
     exit()
 path = sys.argv[1]
 if len(sys.argv) >= 3:
@@ -333,7 +349,6 @@ width = img.size[0]
 height = img.size[1]
 codels = img.load()
 
-
 ################################################################################
 # parse
 
@@ -341,6 +356,9 @@ codels = img.load()
 # initial "reset"
 colorBlock = getColorBlock()
 exitAttempts = 0
+
+# start
+interpretNewColorBlock(getColor(), len(colorBlock))
 
 while exitAttempts < 8:
     exitAttempts += 1
@@ -352,39 +370,39 @@ while exitAttempts < 8:
 
     needle = farthestCodel
 
-    # print ("attempt:", needle, getColor(), peakCodel())
-
     if peakCodel() == BLACK:
         # hit restriction (either black codel or edge of image)
 
         if exitAttempts % 2 == 1:
-            DP = newDir(DP, RIGHT) # rotate DP clockwise
-        else:
             CC = newDir(CC, DOWN) # toggle CC l/r
+        else:
+            DP = newDir(DP, RIGHT) # rotate DP clockwise
 
         needle = oldNeedle # try again
 
     else:
         # no restriction
         # found exit
-
-        stepNeedle(DP) # move into new color block
-        # next color block
-        colorBlock = getColorBlock()
         exitAttempts = 0
 
-        # print (CC, needle)
+        stepNeedle(DP) # move into new color block
 
-        if getColor() is WHITE:
+        if getColor() == WHITE:
+            # if needle is on a white codel
 
+            # let the interpreter know about the white color
             interpretNewColorBlock(WHITE, 0)
 
+            # try to leave the white
             if not moveToNextColorBlockFromWhite():
                 break # couldn't exit white color block, stop reading the image
 
+        # next color block
+        colorBlock = getColorBlock()
+
         interpretNewColorBlock(getColor(), len(colorBlock))
 
-
+print("")
 
 
 
